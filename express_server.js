@@ -80,6 +80,16 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
+app.get("/register", (req, res) => {
+  res.render("urls_register", { user: undefined });
+});
+
+app.post("/register", (req, res) => {
+  if(checkUserEmail(req.body.email)) {
+    res.sendStatus(400);
+  }
+} )
+
 
 
 console.log(generateRandomString(5));
