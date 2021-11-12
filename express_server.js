@@ -2,6 +2,13 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 
+const morgan = require('morgan')
+app.use(morgan('dev'))
+
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
+
+
 app.set("view engine", "ejs")
 
 const urlDatabase = {
@@ -27,7 +34,11 @@ function generateRandomString(length) {
   
 }
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {
+    username: req.cookies["username"],
+    // ... any other vars
+  };
+  res.render("urls_new", templateVars);
 });
 
 app.get("/", (req, res) => {
@@ -42,15 +53,23 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
+// app.get("/hello", (req, res) => {
+//   res.send("<html><body>Hello <b>World</b></body></html>\n");
+// });
+app.get("/urls", (req, res) => { //changed to this
+  let templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"]
+  }
+  res.render("urls_index", templateVars);
 
+});
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL 
   const longURL = urlDatabase[shortURL]
   const templateVars = { shortURL, longURL };
   res.render("urls_show", templateVars);
+  
 });
 
   let code = generateRandomString(6)
@@ -67,7 +86,8 @@ console.log(generateRandomString(5));
 
 app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  res.send("Ok");  
+  console.log(req.body)       // Respond with 'Ok' (we will replace this)
 });
 
 app.post('/urls/:shortURL/delete', (req,res) => {
@@ -79,6 +99,18 @@ app.post('/urls/:shortURL', (req,res) => {
   urlDatabase[req.params.shortURL] = req.body.longURL;
   res.redirect(`/urls/${req.params.shortURL}`);
 })
+
+app.post('/login', (req, res) => {
+  console.log(req.body);
+  const user = req.body.username;
+   res.cookie('username', user);
+   res.redirect('/urls');
+})
+
+app.post("/logout", (req, res) =>{
+  res.clearCookie("username");
+  res.redirect("/urls");
+  });
 
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
