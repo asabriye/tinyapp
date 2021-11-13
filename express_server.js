@@ -11,6 +11,19 @@ app.use(cookieParser());
 
 app.set("view engine", "ejs")
 
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -81,18 +94,28 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  res.render("urls_register", { user: undefined });
+  res.render("urls_register", { username: undefined });
 });
 
 app.post("/register", (req, res) => {
-  if(checkUserEmail(req.body.email)) {
-    res.sendStatus(400);
+  const id = generateRandomString(5)
+  const email = req.body.email
+  const password = req.body.password
+  
+  const user = {
+    id: id,
+    email: email,
+    password: password,
   }
-} )
+  console.log(user)
+  res.cookie("user_id", id)
+  res.redirect("/urls");
+
+  // console.log(generateRandomString(5));
+});
 
 
 
-console.log(generateRandomString(5));
 
 app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
