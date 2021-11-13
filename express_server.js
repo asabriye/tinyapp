@@ -29,6 +29,27 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const checkUserInUsers = function (users, input) {
+  for (const user in users) {
+    if (input.email === users[user].email) {
+        return true;
+    }
+    if (input.password === users[user].password) {
+      return true;
+    }
+  }
+  return false;
+}
+
+const checkUserByEmail = function(emailInput, users) {
+  for (let user in users) {
+    
+    if (users[user].email === emailInput) {
+      return users[user]
+    }
+}
+return undefined;
+}
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
@@ -47,8 +68,11 @@ function generateRandomString(length) {
   
 }
 app.get("/urls/new", (req, res) => {
+  const id = req.cookies["user_id"]
+  const user = users[id]
   const templateVars = {
-    username: req.cookies["username"],
+    user: req.cookies["username"],
+    user: user,
     // ... any other vars
   };
   res.render("urls_new", templateVars);
@@ -70,9 +94,12 @@ app.get("/urls.json", (req, res) => {
 //   res.send("<html><body>Hello <b>World</b></body></html>\n");
 // });
 app.get("/urls", (req, res) => { //changed to this
+  const id = req.cookies["user_id"]
+  const user = users[id];
+  console.log(user)
   let templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"]
+    user: user
   }
   res.render("urls_index", templateVars);
 
@@ -80,7 +107,9 @@ app.get("/urls", (req, res) => { //changed to this
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL 
   const longURL = urlDatabase[shortURL]
-  const templateVars = { shortURL, longURL };
+  const id = req.cookies["user_id"]
+  const user = users[id]
+  const templateVars = { shortURL, longURL, user };
   res.render("urls_show", templateVars);
   
 });
@@ -88,13 +117,14 @@ app.get("/urls/:shortURL", (req, res) => {
   let code = generateRandomString(6)
 app.get("/u/:shortURL", (req, res) => {
   // const longURL = ...
+  
   const longURL = urlDatabase[req.params.shortURL]
   console.log(longURL)
   res.redirect(longURL);
 });
 
 app.get("/register", (req, res) => {
-  res.render("urls_register", { username: undefined });
+  res.render("urls_register", { user: undefined });
 });
 
 app.post("/register", (req, res) => {
@@ -107,7 +137,16 @@ app.post("/register", (req, res) => {
     email: email,
     password: password,
   }
-  console.log(user)
+  if(email === "" || password === "") {
+    res.status(400).send("empty input")
+  }
+
+  if(checkUserInUsers(users, user)){
+    res.status(400).send("please register with unique email")
+  } 
+  
+  users[id] = user
+  console.log("user in register post route",user)
   res.cookie("user_id", id)
   res.redirect("/urls");
 
@@ -118,7 +157,7 @@ app.post("/register", (req, res) => {
 
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
+  // Log the POST request body to the console
   res.send("Ok");  
   console.log(req.body)       // Respond with 'Ok' (we will replace this)
 });
@@ -133,19 +172,40 @@ app.post('/urls/:shortURL', (req,res) => {
   res.redirect(`/urls/${req.params.shortURL}`);
 })
 
+app.get('/login', (req, res) => {
+  console.log(req.cookies);
+  res.render("urls_login", { user: undefined });
+});
+
 app.post('/login', (req, res) => {
   console.log(req.body);
-  const user = req.body.username;
-   res.cookie('username', user);
-   res.redirect('/urls');
+  const email = req.body.email;
+  const user = checkUserByEmail(email, users)
+  console.log("users", users)
+  console.log("user", user)
+  if(user && req.body.password === user.password) {
+    res.cookie('user_id', user.id);
+      res.redirect('/urls');
+  } else {
+    res.status(403).send("Invalid Input")
+  }
+      
+     
+  
 })
 
 app.post("/logout", (req, res) =>{
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
-  });
+});
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const id = req.cookies["user_id"]
+  const user = users[id]
+  const templateVars = { 
+    urls: urlDatabase,
+    user: user
+  }; 
+  console.log("req:")
   res.render("urls_index", templateVars);
 });
