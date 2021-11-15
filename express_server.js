@@ -27,11 +27,11 @@ const users = {
 const urlDatabase = {
   "b6UTxQ": {
       longURL: "https://www.tsn.ca",
-      userID: "aJ48lW"
+      userID: "userRandomID"
   },
   "i3BoGr": {
       longURL: "https://www.google.ca",
-      userID: "aJ48lW"
+      userID: "user2RandomID"
   }
 };
 
@@ -39,9 +39,6 @@ const checkUserInUsers = function (users, input) {
   for (const user in users) {
     if (input.email === users[user].email) {
         return true;
-    }
-    if (input.password === users[user].password) {
-      return true;
     }
   }
   return false;
@@ -56,6 +53,19 @@ const checkUserByEmail = function(emailInput, users) {
 }
 return undefined;
 }
+
+function urlsForUser(id){
+  let filteretdUrls = {};
+  for(let shortURL in urlDatabase){
+    let userId = urlDatabase[shortURL].userID;
+    if(userId === id){
+      filteretdUrls[shortURL] = urlDatabase[shortURL]
+    }
+  }
+  return filteretdUrls
+}
+
+
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
@@ -107,12 +117,14 @@ app.get("/urls", (req, res) => { //changed to this
   const id = req.cookies["user_id"]
   const user = users[id];
   console.log(user)
-  let templateVars = {
-    urls: urlDatabase,
-    user: user
+  let filteredUrls = urlsForUser(id)
+  let filtereDatabse = {
+    urls: filteredUrls,
+    user : user
   }
+  console.log(filteredUrls)
   if (req.cookies.user_id) {
-    res.render("/urls_index", templateVars);
+    res.render("urls_index", filtereDatabse);
   }
   else {
     res.redirect('/login')
@@ -121,12 +133,14 @@ app.get("/urls", (req, res) => { //changed to this
 });
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL 
+  if (!urlDatabase[shortURL]){
+    res.status(400).send("This shortUrl ID does not exist")
+  }
   const longURL = urlDatabase[shortURL].longURL
   const id = req.cookies["user_id"]
   const user = users[id]
   const templateVars = { shortURL, longURL, user };
   res.render("urls_show", templateVars);
-  
 });
 
   let code = generateRandomString(6)
@@ -173,13 +187,16 @@ app.post("/register", (req, res) => {
 
 app.post("/urls", (req, res) => {
   let user_id = req.cookies.user_id
-  let shortURL = generateRandomString();
+  let shortURL = generateRandomString(5);
    urlDatabase[shortURL] = {
     longURL :req.body.longURL,
     userID  : user_id
   }
-  console.log(urlDatabase);
+  if(user_id){
     res.redirect(`/urls/${shortURL}` )
+  } else {
+    res.status(403).send("You are not a logged in user. Please login to create new urls")
+  }
   });
 
 app.post('/urls/:shortURL/delete', (req,res) => {
@@ -207,7 +224,7 @@ app.post('/login', (req, res) => {
     res.cookie('user_id', user.id);
       res.redirect('/urls');
   } else {
-    res.status(403).send("Invalid Input")
+    res.status(403).send("You are not a registered User")
   }
       
      
