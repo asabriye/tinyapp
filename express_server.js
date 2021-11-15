@@ -4,12 +4,10 @@ const PORT = 8080; // default port 8080
 const bcrypt = require('bcryptjs');
 const { checkUserByEmail } = require("./helpers.js");
 const morgan = require('morgan');
-app.use(morgan('dev'));
-
-// const cookieParser = require("cookie-parser");
-// app.use(cookieParser());
-
 const cookieSession = require('cookie-session');
+const bodyParser = require("body-parser");
+
+app.use(morgan('dev'));
 
 app.set("view engine", "ejs");
 
@@ -46,16 +44,6 @@ const checkUserInUsers = function(users, input) {
   return false;
 };
 
-// const checkUserByEmail = function(emailInput, users) {
-//   for (let user in users) {
-    
-//     if (users[user].email === emailInput) {
-//       return users[user];
-//     }
-//   }
-//   return undefined;
-// };
-
 function urlsForUser(id) {
   let filteretdUrls = {};
   for (let shortURL in urlDatabase) {
@@ -67,8 +55,6 @@ function urlsForUser(id) {
   return filteretdUrls;
 }
 
-
-const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
 function generateRandomString(length) {
@@ -104,7 +90,11 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (req.session.user_id) {
+    res.redirect('/urls');
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.delete("/urls/:shortURL", (req, res) => {
@@ -121,9 +111,6 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-// app.get("/hello", (req, res) => {
-//   res.send("<html><body>Hello <b>World</b></body></html>\n");
-// });
 app.get("/urls", (req, res) => { //changed to this
   const id = req.session.user_id;
   const user = users[id];
@@ -189,8 +176,6 @@ app.post("/register", (req, res) => {
   console.log("user in register post route",user);
   req.session.user_id = id;
   res.redirect("/urls");
-    
-  // console.log(generateRandomString(5));
 });
   
   
@@ -262,8 +247,6 @@ app.get("/urls", (req, res) => {
   } else {
     res.redirect('/login');
   }
-  // console.log("req:")
-  // res.render("urls_index", templateVars);
 });
   
   
