@@ -124,7 +124,7 @@ app.get("/urls", (req, res) => { //changed to this
   if (req.session.user_id) {
     res.render("urls_index", filtereDatabse);
   } else {
-    res.redirect('/login');
+    res.status(403).send("Please login or register to view URLs");
   }
     
 });
