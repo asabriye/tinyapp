@@ -35,7 +35,7 @@ const urlDatabase = {
   }
 };
 
-const checkUserInUsers = function(users, input) {
+const checkUserInUsers = function (users, input) {
   for (const user in users) {
     if (input.email === users[user].email) {
       return true;
@@ -55,19 +55,19 @@ function urlsForUser(id) {
   return filteretdUrls;
 }
 
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 function generateRandomString(length) {
-  
-  let shortURL           = '';
-  let characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+  let shortURL = '';
+  let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let charactersLength = characters.length;
   for (let i = 0; i < length; i++) {
     shortURL += characters.charAt(Math.floor(Math.random() *
-  charactersLength));
+      charactersLength));
   }
   return shortURL;
-  
+
 }
 
 app.use(cookieSession({
@@ -118,15 +118,14 @@ app.get("/urls", (req, res) => { //changed to this
   let filteredUrls = urlsForUser(id);
   let filtereDatabse = {
     urls: filteredUrls,
-    user : user
+    user: user
   };
   console.log(filteredUrls);
-  if (req.session.user_id) {
-    res.render("urls_index", filtereDatabse);
-  } else {
-    res.status(403).send("Please login or register to view URLs");
+  if (!id) {
+    res.status(403);
   }
-    
+  res.render("urls_index", filtereDatabse);
+
 });
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
@@ -139,26 +138,26 @@ app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL, longURL, user };
   res.render("urls_show", templateVars);
 });
-  
+
 let code = generateRandomString(6);
 app.get("/u/:shortURL", (req, res) => {
   // const longURL = ...
-    
+
   const longURL = urlDatabase[req.params.shortURL].longURL;
   console.log(longURL);
   res.redirect(longURL);
 });
-  
+
 app.get("/register", (req, res) => {
   res.render("urls_register", { user: undefined });
 });
-  
+
 app.post("/register", (req, res) => {
   const id = generateRandomString(5);
   const email = req.body.email;
   const password = req.body.password;
   const hashedPassword = bcrypt.hashSync(password, 10);
-    
+
   const user = {
     id: id,
     email: email,
@@ -167,26 +166,26 @@ app.post("/register", (req, res) => {
   if (email === "" || password === "") {
     res.status(400).send("empty input");
   }
-    
+
   if (checkUserInUsers(users, user)) {
     res.status(400).send("please register with unique email");
   }
-    
+
   users[id] = user;
-  console.log("user in register post route",user);
+  console.log("user in register post route", user);
   req.session.user_id = id;
   res.redirect("/urls");
 });
-  
-  
-  
-  
+
+
+
+
 app.post("/urls", (req, res) => {
   let user_id = req.session.user_id;
   let shortURL = generateRandomString(5);
   urlDatabase[shortURL] = {
-    longURL :req.body.longURL,
-    userID  : user_id
+    longURL: req.body.longURL,
+    userID: user_id
   };
   if (user_id) {
     res.redirect(`/urls/${shortURL}`);
@@ -194,22 +193,22 @@ app.post("/urls", (req, res) => {
     res.status(403).send("You are not a logged in user. Please login to create new urls");
   }
 });
-  
-app.post('/urls/:shortURL/delete', (req,res) => {
+
+app.post('/urls/:shortURL/delete', (req, res) => {
   delete urlDatabase[req.params.shortURL];
   res.redirect('/urls');
 });
-  
-app.post('/urls/:shortURL', (req,res) => {
+
+app.post('/urls/:shortURL', (req, res) => {
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
   res.redirect(`/urls`);
 });
-  
+
 app.get('/login', (req, res) => {
   console.log(req.session);
   res.render("urls_login", { user: undefined });
 });
-  
+
 app.post('/login', (req, res) => {
   console.log(req.body);
   const email = req.body.email;
@@ -226,14 +225,14 @@ app.post('/login', (req, res) => {
     res.status(403).send("You are not a registered User");
   }
   res.status(403).send('You do not have an account. Please register');
-  
+
 });
-  
-app.post("/logout", (req, res) =>{
+
+app.post("/logout", (req, res) => {
   req.session.user_id = null;
-  res.redirect("/urls");
+  res.redirect("/login");
 });
-  
+
 app.get("/urls", (req, res) => {
   const id = req.session.user_id;
   const user = users[id];
@@ -248,8 +247,8 @@ app.get("/urls", (req, res) => {
     res.redirect('/login');
   }
 });
-  
-  
+
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
