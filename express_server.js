@@ -129,8 +129,12 @@ app.get("/urls", (req, res) => { //changed to this
 });
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  if (!urlDatabase[shortURL]) {
-    res.status(400).send("This shortUrl ID does not exist");
+  let user_id = req.session.user_id;
+  if (!urlDatabase[shortURL] || !user_id) {
+    res.send("Please try again! You don't have permission to view");
+  }
+  if (urlDatabase[shortURL].userID != user_id) {
+    res.send("Please try again! You don't have permission to view");
   }
   const longURL = urlDatabase[shortURL].longURL;
   const id = req.session["user_id"];
@@ -141,7 +145,7 @@ app.get("/urls/:shortURL", (req, res) => {
 
 let code = generateRandomString(6);
 app.get("/u/:shortURL", (req, res) => {
-  // const longURL = ...
+
 
   const longURL = urlDatabase[req.params.shortURL].longURL;
   console.log(longURL);
@@ -214,11 +218,11 @@ app.post('/login', (req, res) => {
   const email = req.body.email;
   const user = checkUserByEmail(email, users);
   const password = req.body.password;
-  // console.log("users", users)
+
   console.log("user", user);
   if (user) {
     if (user.email === req.body.email && bcrypt.compareSync(req.body.password, user.password)) {
-      // res.cookie("user_id",  user.id);
+
       req.session.user_id = user.id;
       res.redirect('/urls');
     }
